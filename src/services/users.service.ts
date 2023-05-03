@@ -25,6 +25,7 @@ export class UserService {
     const findUser: User = await this.user.findUnique({ where: { email: userData.email } });
     if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
 
+    if (!userData.confirmPassword) throw new HttpException(409, `Passwords does not match`);
     const hashedPassword = await hash(userData.password, 10);
     const createUserData: User = await this.user.create({ data: { ...userData, password: hashedPassword } });
     return createUserData;

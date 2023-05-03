@@ -3,13 +3,14 @@ import { Container } from 'typedi';
 import { RequestWithUser } from '@interfaces/auth.interface';
 import { User } from '@interfaces/users.interface';
 import { AuthService } from '@services/auth.service';
+import { CreateUserDto } from '@/dtos/users.dto';
 
 export class AuthController {
   public auth = Container.get(AuthService);
 
   public signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userData: User = req.body;
+      const userData: CreateUserDto = req.body;
       const signUpUserData: User = await this.auth.signup(userData);
 
       res.status(201).json({ data: signUpUserData, message: 'signup' });
