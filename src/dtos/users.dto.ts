@@ -9,8 +9,33 @@ export class CreateUserDto {
   @MinLength(9)
   @MaxLength(32)
   public password: string;
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(9)
+  @MaxLength(32)
+  public confirmPassword: string;
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(3)
+  @MaxLength(10)
+  public firstName: string;
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(3)
+  @MaxLength(10)
+  public lastName: string;
 }
 
+export class LoginUserDto {
+  @IsEmail()
+  public email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(9)
+  @MaxLength(32)
+  public password: string;
+}
 export class UpdateUserDto {
   @IsString()
   @IsNotEmpty()
