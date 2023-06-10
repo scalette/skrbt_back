@@ -6,8 +6,8 @@ export interface DataStoredInToken {
 }
 
 export interface TokenData {
-  token: string;
-  expiresIn: number;
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface RequestWithUser extends Request {

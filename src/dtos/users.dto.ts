@@ -6,24 +6,19 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(9)
+  @MinLength(3)
   @MaxLength(32)
   public password: string;
   @IsString()
   @IsNotEmpty()
-  @MinLength(9)
+  @MinLength(3)
   @MaxLength(32)
   public confirmPassword: string;
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(10)
-  public firstName: string;
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(3)
-  @MaxLength(10)
-  public lastName: string;
+  public name: string;
 }
 
 export class LoginUserDto {
@@ -32,7 +27,7 @@ export class LoginUserDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(9)
+  @MinLength(3)
   @MaxLength(32)
   public password: string;
 }

@@ -27,6 +27,18 @@ export class UserController {
     }
   };
 
+  public getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    res.cookie('cookieName', 'cookieValue', { sameSite: 'none', secure: true})
+    try {
+      const userId = Number(req.params.id);
+      const findOneUserData: User = await this.user.findUserById(userId);
+
+      res.status(200).json({ data: findOneUserData, message: 'findOne' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public createUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: User = req.body;
