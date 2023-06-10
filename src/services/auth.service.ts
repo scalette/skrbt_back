@@ -2,11 +2,14 @@ import { PrismaClient } from '@prisma/client';
 import { compare, hash } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import { Service } from 'typedi';
-import { SECRET_KEY } from '@config';
+import { redisCacheExpiresIn, SECRET_KEY, accessTokenExpiresIn, accessTokenPrivateKey, refreshTokenPrivateKey, refreshTokenExpiresIn } from '@config';
 import { CreateUserDto, LoginUserDto } from '@dtos/users.dto';
 import { HttpException } from '@exceptions/httpException';
 import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
 import { User } from '@interfaces/users.interface';
+import crypto from 'crypto';
+import redisClient from '@/redis/connectRedis';
+import { signJwt } from './utils/jwt';
 
 @Service()
 export class AuthService {
@@ -17,30 +20,30 @@ export class AuthService {
     if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
     if (userData.confirmPassword !== userData.password) throw new HttpException(409, `Passwords do not match`);
     const hashedPassword = await hash(userData.password, 10);
+    const verifyCode = crypto.randomBytes(32).toString('hex');
+    const verificationCode = crypto.createHash('sha256').update(verifyCode).digest('hex');
     const createUserData: Promise<User> = this.users.create({
       data: {
-        firstName: userData.firstName,
-        lastName: userData.lastName,
+        name: userData.name,
         role: 'user',
         email: userData.email,
         password: hashedPassword,
+        verificationCode,
       },
     });
-
     return createUserData;
   }
 
-  public async login(userData: LoginUserDto): Promise<{ cookie: string; findUser: User }> {
+  public async login(userData: LoginUserDto): Promise<{ accessToken: string, refreshToken: string }> {
     const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
     if (!findUser) throw new HttpException(409, `This email ${userData.email} was not found`);
 
     const isPasswordMatching: boolean = await compare(userData.password, findUser.password);
     if (!isPasswordMatching) throw new HttpException(409, 'Password is not matching');
 
-    const tokenData = this.createToken(findUser);
-    const cookie = this.createCookie(tokenData);
+    const { accessToken, refreshToken } = this.createToken(findUser);
 
-    return { cookie, findUser };
+    return { accessToken, refreshToken };
   }
 
   public async logout(userData: User): Promise<User> {
@@ -51,11 +54,18 @@ export class AuthService {
   }
 
   public createToken(user: User): TokenData {
-    const dataStoredInToken: DataStoredInToken = { id: user.id };
-    const secretKey: string = SECRET_KEY;
-    const expiresIn: number = 60 * 60;
+    // 1. Create Session
+    redisClient.set(`${user.id}`, JSON.stringify(user), {
+      EX: +redisCacheExpiresIn * 60,
+    });
+    const accessToken = signJwt({ sub: user.id }, accessTokenPrivateKey, {
+      expiresIn: `${accessTokenExpiresIn}m`,
+    });
+    const refreshToken = signJwt({ sub: user.id }, refreshTokenPrivateKey, {
+      expiresIn: `${refreshTokenExpiresIn}m`,
+    });
 
-    return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
+    return { accessToken, refreshToken };
   }
 
   public createCookie(tokenData: TokenData): string {

@@ -11,13 +11,27 @@ generator client {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
+  @@map(name: "users")
+
+  id String  @id @default(uuid())
+  name String  @db.VarChar(255)
+  email String @unique
+  photo String? @default("default.png")
+  verified Boolean? @default(false) 
+  
   password String
-  firstName String
-  lastName String
-  role String @default('user')
-  active Boolean @default(false)
+  role RoleEnumType? @default(user)
+
+  verificationCode String? @db.VarChar(255) @unique
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([email, verificationCode])
+  @@index([email, verificationCode])
+}
+
+enum RoleEnumType {
+  user
+  admin
 }
