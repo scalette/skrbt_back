@@ -46,13 +46,6 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  public async logout(userData: User): Promise<User> {
-    const findUser: User = await this.users.findFirst({ where: { email: userData.email, password: userData.password } });
-    if (!findUser) throw new HttpException(409, "User doesn't exist");
-
-    return findUser;
-  }
-
   public createToken(user: User): TokenData {
     // 1. Create Session
     redisClient.set(`${user.id}`, JSON.stringify(user), {

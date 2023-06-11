@@ -30,10 +30,14 @@ export class UserController {
   public getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     res.cookie('cookieName', 'cookieValue', { sameSite: 'none', secure: true})
     try {
-      const userId = Number(req.params.id);
-      const findOneUserData: User = await this.user.findUserById(userId);
+      const user = res.locals.user;
 
-      res.status(200).json({ data: findOneUserData, message: 'findOne' });
+      res.status(200).json({
+        status: 'success',
+        data: {
+          user,
+        },
+      });
     } catch (error) {
       next(error);
     }
