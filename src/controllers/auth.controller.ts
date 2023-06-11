@@ -5,6 +5,7 @@ import { User } from '@interfaces/users.interface';
 import { AuthService } from '@services/auth.service';
 import { CreateUserDto } from '@/dtos/users.dto';
 import { omit } from 'lodash';
+import redisClient from '@/redis/connectRedis';
 
 export const excludedFields = ['password', 'verified', 'verificationCode'];
 
@@ -18,6 +19,10 @@ const accessTokenCookieOptions: CookieOptions = {
   ...cookiesOptions,
   expires: new Date(Date.now() + 60 * 60 * 1000),
   maxAge: 60 * 60 * 1000,
+};
+const logoutTokenCookieOptions: CookieOptions = {
+  ...cookiesOptions,
+  maxAge: -1,
 };
 
 export class AuthController {
@@ -53,11 +58,14 @@ export class AuthController {
 
   public logOut = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userData: User = req.user;
-      const logOutUserData: User = await this.auth.logout(userData);
+      await redisClient.del(res.locals.user.id);
+      res.cookie('access_token', '', logoutTokenCookieOptions);
+      res.cookie('refresh_token', '', logoutTokenCookieOptions);
+      res.cookie('logged_in', '', logoutTokenCookieOptions);
 
-      res.setHeader('Set-Cookie', ['Authorization=; Max-age=0']);
-      res.status(200).json({ data: logOutUserData, message: 'logout' });
+      res.status(200).json({
+        status: 'success',
+      });
     } catch (error) {
       next(error);
     }

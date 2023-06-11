@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { NextFunction, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { verify } from 'jsonwebtoken';
 import { accessTokenPublicKey, SECRET_KEY } from '@config';
 import { HttpException } from '@exceptions/httpException';
@@ -57,6 +57,20 @@ export const AuthMiddleware = async (req: RequestWithUser, res: Response, next: 
 
     // Add user to res.locals
     res.locals.user = omit(user, excludedFields);
+
+    next();
+  } catch (err: any) {
+    next(err);
+  }
+};
+
+export const requireUser = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = res.locals.user;
+
+    if (!user) {
+      return next(new HttpException(401, `Session has expired or user doesn't exist`));
+    }
 
     next();
   } catch (err: any) {
